@@ -1,0 +1,10 @@
+{
+ "argv": [
+  "@XLEX_EXECUTABLE@",
+  "-f",
+  "{connection_file}"
+ ],
+ "display_name": "Nix (Lix)",
+ "language": "nix",
+ "name": "lix"
+}
