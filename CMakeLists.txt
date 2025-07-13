@@ -93,3 +93,12 @@ install(
     DIRECTORY "${KERNEL_SPEC_DIR_BUILD}/"
     DESTINATION "${KERNEL_SPEC_DIR_INSTALL}"
 )
+
+# testing
+
+# required for running the test suite.
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+enable_testing()
+
+# include the test subdirectory to define tests.
+add_subdirectory(test)
