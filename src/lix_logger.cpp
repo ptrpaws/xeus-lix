@@ -10,11 +10,15 @@ namespace xeus_lix
     // called by lix to log general messages.
     void JupyterLogger::log(nix::Verbosity lvl, const std::string_view s)
     {
-        // we redirect info-level and below messages to stderr of the cell
-        if (lvl <= nix::lvlInfo)
-        {
+        // error/warn: redirected to stderr of cell
+        if (lvl <= nix::lvlWarn) {
             p_interpreter->publish_stream("stderr", std::string(s) + "\n");
         }
+        // notice/info: redirected to stdout of cell
+        else if (lvl <= nix::lvlInfo) {
+            p_interpreter->publish_stream("stdout", std::string(s) + "\n");
+        }
+        // talkative+: ignore
     }
 
     // called by lix to log structured error information.
