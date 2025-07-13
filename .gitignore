@@ -1,0 +1,25 @@
+# CMake build artifacts
+/build/
+/CMakeCache.txt
+/CMakeFiles/
+/cmake_install.cmake
+/compile_commands.json
+
+# Nix derivation symlinks
+/result
+result-out
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.so
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Test artifacts and temporary files
+/test/test_flake/
+/test/test.nix
+
+# macOS specific files
+.DS_Store
