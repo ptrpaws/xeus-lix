@@ -60,6 +60,7 @@
             pkgs.zeromq
             pkgs.openssl
             pkgs.nlohmann_json
+            pkgs.libsodium
           ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
             pkgs.libuuid
           ];
