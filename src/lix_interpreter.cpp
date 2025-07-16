@@ -22,23 +22,6 @@
 
 namespace xeus_lix
 {
-    // forward declarations for lix-doc functionality
-    // these functions allow retrieving documentation for lambdas from source
-    extern "C"
-    {
-        char const* lixdoc_get_function_docs(char const* filename, size_t line, size_t col);
-        void lixdoc_free_string(char const* str);
-    }
-    // a smart pointer to manage strings allocated by lix-doc
-    using NdString = std::unique_ptr<const char, decltype(&lixdoc_free_string)>;
-
-    // helper to get documentation for a lambda at a specific source position
-    NdString lambdaDocsForPos(const nix::SourcePath& path, const nix::Pos& pos)
-    {
-        std::string const file = path.to_string();
-        return NdString{ lixdoc_get_function_docs(file.c_str(), pos.line, pos.column), &lixdoc_free_string };
-    }
-
     interpreter::interpreter()
         : m_aio(std::make_unique<nix::AsyncIoRoot>())
         , m_store(m_aio->blockOn(nix::openStore()))
@@ -560,24 +543,6 @@ namespace xeus_lix
             nix::Value v(nix::Value::null_t{});
             eval_pure_expression(to_inspect, v);
 
-            // if it's a lambda with a source position, try to get embedded docs
-            if (v.isLambda() && v.lambda.fun->pos != nix::noPos)
-            {
-                auto pos = m_evaluator->positions[v.lambda.fun->pos];
-                if (auto path = std::get_if<nix::CheckedSourcePath>(&pos.origin))
-                {
-                    auto doc_comment = lambdaDocsForPos(*path, pos);
-                    if (doc_comment)
-                    {
-                        std::string doc_str = nix::stripIndentation(doc_comment.get());
-                        nl::json data;
-                        data["text/markdown"] = std::move(doc_str);
-                        return xeus::create_inspect_reply(true, data);
-                    }
-                }
-            }
-
-            // otherwise, check for builtin documentation
             std::string doc_str = get_doc_string(v);
 
             if (!doc_str.empty())

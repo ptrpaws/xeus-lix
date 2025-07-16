@@ -12,6 +12,23 @@
 #include "lix/libutil/error.hh"
 #include "lix/libutil/strings.hh"
 
+// forward declarations for lix-doc functionality
+// these functions allow retrieving documentation for lambdas from source
+extern "C"
+{
+    char const* lixdoc_get_function_docs(char const* filename, size_t line, size_t col);
+    void lixdoc_free_string(char const* str);
+}
+// a smart pointer to manage strings allocated by lix-doc
+using NdString = std::unique_ptr<const char, decltype(&lixdoc_free_string)>;
+
+// helper to get documentation for a lambda at a specific source position
+NdString lambdaDocsForPos(const nix::SourcePath& path, const nix::Pos& pos)
+{
+    std::string const file = path.to_string();
+    return NdString{ lixdoc_get_function_docs(file.c_str(), pos.line, pos.column), &lixdoc_free_string };
+}
+
 namespace xeus_lix
 {
     void interpreter::execute_shell_command(const std::string_view command_block)
@@ -103,6 +120,7 @@ namespace xeus_lix
 
     std::string interpreter::get_doc_string(const nix::Value& v) const
     {
+        // check for builtin function documentation
         if (auto doc = m_evaluator->builtins.getDoc(const_cast<nix::Value&>(v)))
         {
             std::stringstream markdown_stream;
@@ -120,6 +138,20 @@ namespace xeus_lix
             markdown_stream << nix::stripIndentation(doc->doc);
             return markdown_stream.str();
         }
+        // try to get the documentation comment if it's a lambda with a source position
+        else if (v.isLambda() && v.lambda.fun->pos != nix::noPos)
+        {
+            auto pos = m_evaluator->positions[v.lambda.fun->pos];
+            if (auto path = std::get_if<nix::CheckedSourcePath>(&pos.origin))
+            {
+                auto docComment = lambdaDocsForPos(*path, pos);
+                if (docComment)
+                {
+                    return nix::stripIndentation(docComment.get());
+                }
+            }
+        }
+        // no documentation was found
         return "";
     }
 }
