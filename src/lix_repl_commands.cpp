@@ -236,31 +236,50 @@ namespace xeus_lix
     void interpreter::repl_env(const std::string& /* arg */)
     {
         std::stringstream ss;
-        ss << "Current scope variables:\n";
-        std::set<std::string> var_names;
 
-        std::function<void(const nix::StaticEnv*)> collect_vars = [&](const nix::StaticEnv* senv) {
-            if (!senv) return;
-            for (const auto& [symbol, displ] : senv->vars)
-            {
-                std::string var_name = m_evaluator->symbols[symbol];
-                if (var_name.rfind("__", 0) != 0) // Don't show internal builtins
-                {
-                    var_names.insert(var_name);
-                }
+        std::function<void(const nix::StaticEnv*, int)> print_level =
+            [&](const nix::StaticEnv* senv, int level) {
+
+            if (!senv) {
+                return;
             }
-            if (senv->up && senv->up != m_evaluator->builtins.staticEnv.get())
-            {
-                collect_vars(senv->up);
+
+            ss << "Env level " << level << "\n";
+
+            if (senv->up) {
+                std::vector<std::string_view> var_names;
+                for (const auto& [symbol, displ] : senv->vars) {
+                    var_names.push_back(m_evaluator->symbols[symbol]);
+                }
+                std::sort(var_names.begin(), var_names.end());
+
+                ss << "static: " << ANSI_MAGENTA;
+                for (const auto& name : var_names) {
+                    ss << name << " ";
+                }
+                ss << ANSI_NORMAL << "\n\n";
+
+                // recurse to the next level
+                print_level(senv->up, level + 1);
+            } else {
+                std::vector<std::string_view> var_names;
+                for (const auto& [symbol, displ] : senv->vars) {
+                     std::string_view name = m_evaluator->symbols[symbol];
+                     if (!name.starts_with("__")) { // exclude internal builtins
+                        var_names.push_back(name);
+                     }
+                }
+                std::sort(var_names.begin(), var_names.end());
+
+                ss << ANSI_MAGENTA;
+                for (const auto& name : var_names) {
+                    ss << name << " ";
+                }
+                ss << ANSI_NORMAL << "\n";
             }
         };
-        collect_vars(m_staticEnv.get());
 
-        for (const auto& name : var_names)
-        {
-            ss << "  " << name << "\n";
-        }
-        ss << "\n(Note: This is a simplified view of the top-level scope)\n";
+        print_level(m_staticEnv.get(), 0);
 
         publish_stream("stdout", ss.str());
     }
