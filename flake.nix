@@ -12,7 +12,12 @@
   outputs = { self, nixpkgs, lix, flake-utils, nixpkgs-fmt }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = import nixpkgs { inherit system; };
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [ lix.overlays.default ];
+        };
+      in
+      rec {
 
         jupyter-kernel-test-pkg = pkgs.python3.pkgs.buildPythonPackage rec {
           pname = "jupyter_kernel_test";
@@ -49,8 +54,8 @@
 
           buildInputs = [
             # lix dependencies
-            lix.packages.${system}.nix.dev
-            lix.packages.${system}.nix.passthru.capnproto-lix
+            pkgs.nix.dev
+            pkgs.capnproto
             pkgs.boost
 
             # xeus dependencies
@@ -76,8 +81,6 @@
           };
         };
 
-      in
-      {
         packages.default = xeus-lix-pkg;
 
         devShells.default = pkgs.mkShell {
