@@ -127,7 +127,8 @@ namespace xeus_lix
                                     nl::json data_bundle;
                                     for (const auto& attr : *mime_set_val.attrs)
                                     {
-                                        std::string mime_type = m_evaluator->symbols[attr.name];
+                                        std::string_view mime_type_sv = m_evaluator->symbols[attr.name];
+                                        std::string mime_type(mime_type_sv);
                                         nix::Value& data_val_ref = *attr.value;
                                         std::string data_str(
                                             m_evalState->forceString(data_val_ref, attr.pos, "mime data")
@@ -401,7 +402,8 @@ namespace xeus_lix
                 {
                     for (const auto& attr : *base_val.attrs)
                     {
-                        std::string attr_name = m_evaluator->symbols[attr.name];
+                        std::string_view attr_name_sv = m_evaluator->symbols[attr.name];
+                        std::string attr_name(attr_name_sv);
                         if (attr_name.rfind(attr_prefix, 0) == 0)
                         {
                             matches.push_back(base_expr_str + "." + attr_name);
@@ -418,7 +420,8 @@ namespace xeus_lix
                     if (!senv) return;
                     for (const auto& [symbol, displ] : senv->vars)
                     {
-                        std::string var_name = m_evaluator->symbols[symbol];
+                        std::string_view var_name_sv = m_evaluator->symbols[symbol];
+                        std::string var_name(var_name_sv);
                         if (var_name.rfind("__", 0) != 0) // exclude internal builtins
                         {
                             candidates.insert(var_name);

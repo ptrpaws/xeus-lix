@@ -317,7 +317,7 @@ namespace xeus_lix
 
         if (v.type() == nix::nString)
         {
-            publish_stream("stdout", v.string.s);
+            publish_stream("stdout", std::string(v.str()));
         }
         else
         {
